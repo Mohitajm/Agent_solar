@@ -1,0 +1,493 @@
+# block_1a_knowledge.yaml
+# Knowledge base for the Jamnagar Solar+BESS pilot — Block 1A only.
+# The Python agent loads this file at startup and uses it both as
+# (a) a system-prompt context and (b) a runtime validator for tool inputs.
+
+plant:
+  name: "Jamnagar Solar+BESS Pilot"
+  location: "Jamnagar, Gujarat, India"
+  operator: "Reliance Industries Limited"
+  # Plant discriminator used in the multi-tenant `events` collection.
+  # All Mongo queries are filtered with `eid: <this value>` in addition to meterId + time.
+  eid: "jamnagarsolar"
+
+block_1a:
+  description: >
+    Block 1A: Monofacial Fixed-Tilt Solar + BESS, AC-coupled architecture.
+    Solar PV is 3.28 MW DC with a single solar inverter (B1INV1).
+    BESS is 10.32 MWh total — three containers of 3.44 MWh each (B1BCT1/2/3),
+    AC-coupled via a single PCS (B1PCS1). B1PQM2 is the point-of-coupling
+    meter measuring combined Solar+BESS output to the grid.
+  solar_dc_mw: 3.28
+  bess_total_mwh: 10.32
+  bess_container_count: 3
+  bess_container_mwh: 3.44
+
+# ============================================================
+# Shared tag lists (used as YAML anchors below to avoid duplication).
+# These are NOT meters themselves — the Python loader filters them out.
+# ============================================================
+_shared:
+
+  bct_notable_tags: &BCT_NOTABLE
+    "State of Charge (%)": bessSOC
+    "State of Health (%)": bessSOH
+    "Battery health indicator": bessHealth
+    "BESS current (A)": bessCurrent
+    "BESS pack voltage (V)": bessVoltage
+    "BESS avg cell voltage (V)": bessAvgVoltage
+    "Max cell voltage in pack (V)": maxCellVoltagePack
+    "Min cell voltage in pack (V)": minCellVoltagePack
+    "Avg cell temperature (°C)": bessAvgTemperature
+    "Max cell temperature (°C)": bessMaxTemperature
+    "Min cell temperature (°C)": bessMinTemperature
+    "Lifetime charge energy (kWh)": bessAccChargeEnergy
+    "Lifetime discharge energy (kWh)": bessAccDischargeEnergy
+    "Available charge headroom (kWh)": bessAvailableChargeEnergy
+    "Available discharge headroom (kWh)": bessAvailableDischargeEnergy
+    "Max charging current (A)": bessMaxChargingCurrent
+    "Max discharging current (A)": bessMaxDischargingCurrent
+    "Max charging power (kW)": bessMaxChargingPower
+    "Max discharging power (kW)": bessMaxDischargingPower
+    "AC active power at container (kW)": activePower
+    "AC reactive power (kVAR)": reactivePower
+    "Container status code": bessStatus
+    "Container humidity (%)": humidity
+
+  bct_all_tags: &BCT_ALL_TAGS
+    - slaveId
+    - tms
+    - bessSOC
+    - bessSOH
+    - noOfBatteryModules
+    - maxCellVoltagePack
+    - minCellVoltagePack
+    - rackCurrentDifference
+    - maxVoltageRack
+    - bessHealth
+    - bessAccDischargeEnergy
+    - bessAvailableDischargeEnergy
+    - bessAccChargeEnergy
+    - bessMaxChargingPower
+    - bessMaxDischargingCurrent
+    - bessMaxTemperatureNumber
+    - bessMinTemperatureNumber
+    - bessAvgTemperature
+    - bessMaxVoltage
+    - bessMaxVoltageNumber
+    - bessMinVoltage
+    - bessMinVoltageNumber
+    - upsOpsFrequency
+    - upsOpsApparentPowerTotal
+    - upsBatteryVoltage
+    - upsBatteryBackupTime
+    - powerFactor
+    - activePower
+    - apparentPower
+    - reactivePower
+    - voltagePhaseAB
+    - voltagePhaseBC
+    - voltagePhaseCA
+    - actualMeterEvent
+    - fdp_details
+    - service_workorder_details
+    - equipment_details
+    - minTempModule
+    - bessMaxDischargingPower
+    - humidity
+    - bessCurrent
+    - bessStatus
+    - bessMaxTemperature
+    - bessMinTemperature
+    - bessVoltage
+    - noOfBatteryModulesOk
+    - rackVoltageDifference
+    - maxTempCell
+    - minVoltageRack
+    - bessAvailableChargeEnergy
+    - bessMaxChargingCurrent
+    - bessAvgVoltage
+    - upsBatteryChargeLevel
+    - upsOpsActivePowerTotal
+
+  mfm_notable_tags: &MFM_NOTABLE
+    "Active power (kW)": activePower
+    "Apparent power (kVA)": apparentPower
+    "Reactive power (kVAR)": reactivePower
+    "Power factor": powerFactor
+    "Frequency (Hz)": frequency
+    "Daily active energy export (kWh)": dailyActiveEnergyExport
+    "Daily active energy import (kWh)": dailyActiveEnergyImport
+    "Lifetime active energy export (kWh)": totalActiveEnergyExport
+    "Lifetime active energy import (kWh)": totalActiveEnergyImport
+    "Net active energy (kWh)": netActiveEnergy
+    "Daily peak active power (kW)": dailyPeackActivePower
+    "Line-to-line avg voltage (V)": voltageLineToLineAverage
+
+  mfm_all_tags: &MFM_ALL_TAGS
+    - slaveId
+    - ver
+    - tms
+    - voltageRPhase
+    - voltageYPhase
+    - voltageBPhase
+    - voltageRYPhase
+    - voltageYBPhase
+    - voltageBRPhase
+    - currentRPhase
+    - currentYPhase
+    - currentBPhase
+    - activePower
+    - apparentPower
+    - reactivePower
+    - powerFactor
+    - frequency
+    - powerFactorRPhase
+    - powerFactorYPhase
+    - powerFactorBPhase
+    - voltageLineToLineAverage
+    - totalNeutralLineCurrent
+    - totalActiveEnergyImport
+    - totalActiveEnergyExport
+    - netActiveEnergy
+    - currentToVoltageRPhase
+    - currentToVoltageYPhase
+    - currentToVoltageBPhase
+    - thdVoltageRPhase
+    - thdVoltageYPhase
+    - thdVoltageBPhase
+    - thdCurrentRPhase
+    - thdCurrentYPhase
+    - thdCurrentBPhase
+    - apparentEnergyActiveImport
+    - apparentEnergyActiveExport
+    - reactiveEnergyImport
+    - reactiveEnergyExport
+    - activeEnergyForwarded
+    - apparentEnergyForwarded
+    - reactiveEnergyLagForwarded
+    - reactiveEnergyLeadForwarded
+    - activeGrossEnergyImport
+    - activeGrossEnergyExport
+    - deviceStatus
+    - dailyActiveEnergyExport
+    - dailyActiveEnergyImport
+    - dailyApparentEnergyExport
+    - dailyApparentEnergyImport
+    - dailyReactiveEnergyExport
+    - dailyReactiveEnergyImport
+    - dailyPeackActivePower
+    - actualMeterEvent
+    - fdp_details
+    - service_workorder_details
+    - equipment_details
+
+# ============================================================
+# Meter inventory (Block 1A)
+# Tag names are stored WITHOUT the "meter." prefix.
+# The Python loader adds "meter." when querying MongoDB.
+# ============================================================
+meters:
+
+  B1INV1:
+    full_id: "JAMNAGAR_VIRTUAL_GATEWAY_B1INV1"
+    role: "Solar Inverter"
+    description: >
+      The single solar PV inverter for Block 1A. Converts the 3.28 MW DC
+      monofacial fixed-tilt array output into AC. Reports 24 string-combiner-box
+      currents (SCB1current…SCB24current) for string-level diagnostics.
+    note: >
+      24 string-CB current channels (SCB1current to SCB24current) are
+      available — use these for spotting under-performing PV strings.
+    notable_tags:
+      "AC output power (kW)": outputPower
+      "DC input PV power (kW)": inputPVPower
+      "Daily energy (kWh)": energyToday
+      "Lifetime energy (kWh)": energyTillDate
+      "Apparent energy today (kVAh)": apparentEnergyToday
+      "Lifetime apparent energy (kVAh)": apparentEnergyTillDate
+      "DC input voltage (V)": inputVoltage
+      "DC input current (A)": inputCurrent
+      "AC R-phase voltage (V)": vacRphase
+      "AC Y-phase voltage (V)": vacYphase
+      "AC B-phase voltage (V)": vacBphase
+      "Reactive power (kVAR)": reactivePower
+      "Frequency (Hz)": frequency
+      "Power factor": pF
+      "Inverter status code": inverterStatus
+    all_tags:
+      - slaveId
+      - tms
+      - apparentEnergyTillDate
+      - apparentEnergyToday
+      - inputPVPower
+      - inputCurrent
+      - inputVoltage
+      - reactivePower
+      - inverterStatus
+      - pF
+      - outputPower
+      - frequency
+      - vacRphase
+      - vacYphase
+      - vacBphase
+      - energyToday
+      - energyTillDate
+      - SCB1current
+      - SCB2current
+      - SCB3current
+      - SCB4current
+      - SCB5current
+      - SCB6current
+      - SCB7current
+      - SCB8current
+      - SCB9current
+      - SCB10current
+      - SCB11current
+      - SCB12current
+      - SCB13current
+      - SCB14current
+      - SCB15current
+      - SCB16current
+      - SCB17current
+      - SCB18current
+      - SCB19current
+      - SCB20current
+      - SCB21current
+      - SCB22current
+      - SCB23current
+      - SCB24current
+      - actualMeterEvent
+      - fdp_details
+      - service_workorder_details
+      - equipment_details
+
+  B1MFM2:
+    full_id: "JAMNAGAR_VIRTUAL_GATEWAY_B1MFM2"
+    role: "Solar Output MFM"
+    description: >
+      Multi-function meter installed at the AC output of the solar inverter
+      (post-inverter, pre-coupling). This is the cleanest measurement of
+      pure solar generation for Block 1A.
+    notable_tags: *MFM_NOTABLE
+    all_tags: *MFM_ALL_TAGS
+
+  B1MFM1:
+    full_id: "JAMNAGAR_VIRTUAL_GATEWAY_B1MFM1"
+    role: "Auxiliary Consumption MFM"
+    description: >
+      Multi-function meter measuring auxiliary / parasitic power consumption
+      of Block 1A equipment (PCS aux loads, BESS HVAC, lighting, control panels,
+      etc.). Use dailyActiveEnergyImport for daily aux kWh.
+    notable_tags: *MFM_NOTABLE
+    all_tags: *MFM_ALL_TAGS
+
+  B1PQM2:
+    full_id: "JAMNAGAR_VIRTUAL_GATEWAY_B1PQM2"
+    role: "Point of Coupling Meter (with Power Quality)"
+    description: >
+      MFM at the point of coupling — the combined Solar+BESS net output
+      to the grid. This is the meter that matters for energy accounting,
+      DSM, and PPA compliance. Also reports THD on V and I per phase.
+    notable_tags:
+      "Active power to grid (kW)": activePower
+      "Reactive power (kVAR)": reactivePower
+      "Power factor": powerFactor
+      "Frequency (Hz)": frequency
+      "Daily export to grid (kWh)": dailyActiveEnergyExport
+      "Daily import from grid (kWh)": dailyActiveEnergyImport
+      "Lifetime export (kWh)": totalActiveEnergyExport
+      "Lifetime import (kWh)": totalActiveEnergyImport
+      "Net active energy (kWh)": netActiveEnergy
+      "Daily peak active power (kW)": dailyPeackActivePower
+      "Max demand active power (kW)": maxDemandActivePower
+      "Max demand reactive power (kVAR)": maxDemandReactivePower
+      "Max demand apparent power (kVA)": maxDemandApparentPower
+      "THD voltage R-phase (%)": thdVoltageRPhase
+      "THD current R-phase (%)": thdCurrentRPhase
+    all_tags:
+      - slaveId
+      - ver
+      - tms
+      - voltageRPhase
+      - voltageYPhase
+      - voltageBPhase
+      - currentRPhase
+      - currentYPhase
+      - currentBPhase
+      - activePower
+      - reactivePower
+      - powerFactor
+      - frequency
+      - totalActiveEnergyImport
+      - totalActiveEnergyExport
+      - netActiveEnergy
+      - reactiveEnergyImport
+      - reactiveEnergyExport
+      - apparentEnergyForwarded
+      - activeGrossEnergyImport
+      - activeGrossEnergyExport
+      - maxDemandActivePower
+      - maxDemandReactivePower
+      - maxDemandApparentPower
+      - deviceStatus
+      - dailyActiveEnergyExport
+      - dailyActiveEnergyImport
+      - dailyReactiveEnergyExport
+      - dailyReactiveEnergyImport
+      - dailyPeackActivePower
+      - actualMeterEvent
+      - fdp_details
+      - service_workorder_details
+      - equipment_details
+      - thdVoltageYPhase
+      - thdVoltageBPhase
+      - thdCurrentYPhase
+      - thdCurrentBPhase
+      - thdVoltageRPhase
+      - thdCurrentRPhase
+
+  B1PCS1:
+    full_id: "JAMNAGAR_VIRTUAL_GATEWAY_B1PCS1"
+    role: "BESS Power Conversion System (PCS)"
+    description: >
+      The single PCS interfacing the three BESS containers to the AC bus.
+      Handles charge / discharge dispatch via active-power setpoint. Reports
+      AC-side and DC-side energy, voltage, current, temperatures, and grid
+      waiting time.
+    note: >
+      Sign convention — dailyAcEnergyImport corresponds to BESS charging
+      (drawing AC from the bus); dailyAcEnergyExport corresponds to
+      BESS discharging (pushing AC to the bus). Verify against
+      activePower polarity in your dataset before relying on it.
+    notable_tags:
+      "AC active power (kW)": activePower
+      "AC apparent power (kVA)": apparentPower
+      "AC reactive power (kVAR)": reactivePower
+      "DC power (kW)": dcPower
+      "DC voltage (V)": dcVoltage
+      "DC current (A)": dcCurrent
+      "Daily AC charge import (kWh)": dailyAcEnergyImport
+      "Daily AC discharge export (kWh)": dailyAcEnergyExport
+      "Daily DC charge (kWh)": dailyDcEnergyImport
+      "Daily DC discharge (kWh)": dailyDcEnergyExport
+      "Lifetime AC export (kWh)": acEnergyTotalExport
+      "Lifetime AC import (kWh)": acEnergyTotalImport
+      "Lifetime DC export (kWh)": dcEnergyTotalExport
+      "Lifetime DC import (kWh)": dcEnergyTotalImport
+      "Active power setpoint (kW)": activePowerSetPoint
+      "Reactive power setpoint (kVAR)": reactivePowerSetPoint
+      "DC compartment temp (°C)": dcTemp
+      "AC compartment temp (°C)": acTemp
+      "Ambient temp (°C)": ambientTemp
+      "Operational status code": inverterStatusOperation
+      "Communication health flag": statusCommunicationHealthy
+      "Operation time (s)": operationTime
+      "Grid waiting time (s)": gridWaitingTime
+    all_tags:
+      - slaveId
+      - tms
+      - statusCommunicationHealthy
+      - inverterStatusOperation
+      - dcEnergyTotalExport
+      - dcEnergyTotalImport
+      - acEnergyTotalExport
+      - acEnergyTotalImport
+      - dailyAcEnergyExport
+      - dailyAcEnergyImport
+      - dailyDcEnergyExport
+      - dailyDcEnergyImport
+      - powerFactor
+      - frequency
+      - activePower
+      - apparentPower
+      - reactivePower
+      - dcPower
+      - dcVoltage
+      - dcCurrent
+      - dcTemp
+      - acTemp
+      - phaseRVoltage
+      - phaseRCurrent
+      - phaseBVoltage
+      - phaseBCurrent
+      - phaseYVoltage
+      - phaseYCurrent
+      - ambientTemp
+      - inverterType
+      - gfdiSwitchStatus
+      - operationTime
+      - gridWaitingTime
+      - activePowerSetPoint
+      - reactivePowerSetPoint
+      - actualMeterEvent
+      - fdp_details
+      - service_workorder_details
+      - equipment_details
+
+  B1BCT1:
+    full_id: "JAMNAGAR_VIRTUAL_GATEWAY_B1BCT1"
+    role: "BESS Container 1 (3.44 MWh)"
+    description: >
+      BESS container 1 of 3. Reports rack-level SOC/SOH, cell-level
+      voltage extremes, pack temperatures, available charge/discharge
+      energy headroom, AC active power at the container terminals,
+      and container UPS metrics.
+    notable_tags: *BCT_NOTABLE
+    all_tags: *BCT_ALL_TAGS
+
+  B1BCT2:
+    full_id: "JAMNAGAR_VIRTUAL_GATEWAY_B1BCT2"
+    role: "BESS Container 2 (3.44 MWh)"
+    description: >
+      BESS container 2 of 3. Identical schema and capacity to B1BCT1.
+    notable_tags: *BCT_NOTABLE
+    all_tags: *BCT_ALL_TAGS
+
+  B1BCT3:
+    full_id: "JAMNAGAR_VIRTUAL_GATEWAY_B1BCT3"
+    role: "BESS Container 3 (3.44 MWh)"
+    description: >
+      BESS container 3 of 3. Identical schema and capacity to B1BCT1.
+    notable_tags: *BCT_NOTABLE
+    all_tags: *BCT_ALL_TAGS
+
+  WMS:
+    full_id: "JAMNAGAR_VIRTUAL_GATEWAY_PPCWMS1"
+    role: "Weather Monitoring Station (shared)"
+    description: >
+      Plant-level weather monitoring station. Physically shared across
+      Blocks 1A / 1B / 1C, but in this agent it is used only for Block 1A
+      analysis. Provides GHI, plane-of-array irradiance, ambient and
+      module temperatures, wind, humidity, and rainfall.
+    notable_tags:
+      "Global Horizontal Irradiance, GHI (W/m²)": globalHorizontalIrradiance
+      "Plane of Array irradiance, sensor 01 (W/m²)": planeOfArraySensor01
+      "Daily GHI integral (kWh/m²)": globalCalculatedkWhPerDay
+      "Daily POA integral, sensor 01 (kWh/m²)": poaCalculatedkWhPerDaySensor01
+      "Ambient temperature (°C)": ambientTemperature
+      "Module temperature, sensor 01 (°C)": moduleTemperatureSensor01
+      "Module temperature, sensor 03 (°C)": moduleTemperatureSensor03
+      "Wind speed (m/s)": windSpeed
+      "Wind direction (deg)": windDirection
+      "Humidity (%)": humidity
+      "Rainfall (mm)": rainfall
+    all_tags:
+      - slaveId
+      - ver
+      - tms
+      - windSpeed
+      - windDirection
+      - ambientTemperature
+      - humidity
+      - globalHorizontalIrradiance
+      - globalCalculatedkWhPerDay
+      - planeOfArraySensor01
+      - poaCalculatedkWhPerDaySensor01
+      - moduleTemperatureSensor01
+      - moduleTemperatureSensor03
+      - rainfall
+      - actualMeterEvent
+      - fdp_details
+      - service_workorder_details
+      - equipment_details
