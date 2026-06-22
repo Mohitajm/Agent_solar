@@ -1,0 +1,7 @@
+# config.yaml
+GOOGLE_API_KEY: "API_KEY"
+# Updated to use your working corporate network connection string
+MONGO_URI: "URL"
+DB_NAME: "Solar_SIT"
+COLLECTION_NAME: "events"
+PLOTS_DIR: "charts"
